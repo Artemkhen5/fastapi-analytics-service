@@ -5,8 +5,10 @@ import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 
 from src.config import Settings
+from src.database import async_session_factory
 from src.rabbit.exceptions import PermanentProcessingError, TemporaryProcessingError
-from src.rabbit.service import handle_message
+from src.rabbit.protocols import MessageHandler
+from src.rabbit.service import RabbitService
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +17,9 @@ class RabbitConsumer:
     MAX_RETRIES = 3
     RETRY_DELAY_MS = 5_000
 
-    def __init__(self, rabbit_url: str) -> None:
+    def __init__(self, rabbit_url: str, handler: MessageHandler) -> None:
         self.rabbit_url = rabbit_url
+        self.handler = handler
         self.connection: aio_pika.abc.AbstractRobustConnection | None = None
         self.channel: aio_pika.abc.AbstractRobustChannel | None = None
         self.queue: aio_pika.abc.AbstractRobustQueue | None = None
@@ -103,7 +106,7 @@ class RabbitConsumer:
         async with self.queue.iterator() as queue_iter:
             async for message in queue_iter:
                 try:
-                    await handle_message(message.body)
+                    await self.handler.handle_message(message.body)
                 except TemporaryProcessingError:
                     headers = message.headers or {}
                     retry_count = int(headers.get("x-retry-count", 0))
@@ -165,9 +168,10 @@ class RabbitConsumer:
 
 async def main() -> None:
     settings = Settings()
-
+    service = RabbitService(session_factory=async_session_factory)
     consumer = RabbitConsumer(
         rabbit_url=settings.RABBITMQ_URL,
+        handler=service
     )
 
     await consumer.run()
