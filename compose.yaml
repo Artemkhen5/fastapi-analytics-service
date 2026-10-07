@@ -20,7 +20,7 @@ services:
 
   worker:
     build: .
-    command: ["python", "-m", "src.rabbit.rabbit"]
+    command: ["python", "-m", "src.rabbit.consumer"]
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-analytics}:${POSTGRES_PASSWORD:-analytics}@postgres:5432/${POSTGRES_DB:-analytics}
       RABBITMQ_URL: ${RABBITMQ_URL}
