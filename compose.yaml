@@ -60,9 +60,27 @@ services:
       timeout: 3s
       retries: 10
 
+  rabbitmq:
+    profiles:
+      - local-rabbit
+    image: rabbitmq:3.10.7-management
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: analytics
+      RABBITMQ_DEFAULT_PASS: analytics
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - shared_rabbit
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
 networks:
   shared_rabbit:
     external: true
 
 volumes:
   postgres_data:
+  rabbitmq_data:
