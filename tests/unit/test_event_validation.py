@@ -57,3 +57,5 @@ def test_event_rejected_with_extra_fields(uuid_v_7: str):
 
     with pytest.raises(ValidationError) as exc_info:
         EventMessage.model_validate(payload)
+
+    assert exc_info.value.errors()[0]["type"] == "extra_forbidden"
