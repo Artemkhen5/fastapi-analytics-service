@@ -1,5 +1,3 @@
-import hashlib
-import json
 import logging
 from datetime import timezone
 
@@ -11,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from src.events.models import Event, EventReceipt
 from src.rabbit.exceptions import PermanentProcessingError, TemporaryProcessingError
+from src.rabbit.payload import calculate_payload_hash
 from src.rabbit.schemas import EventMessage
 
 logger = logging.getLogger(__name__)
@@ -44,19 +43,8 @@ class RabbitService:
             )
             return
 
-        payload_hash = self.calculate_payload_hash(body)
+        payload_hash = calculate_payload_hash(body)
         await self.save_event(event, payload_hash)
-
-    @staticmethod
-    def calculate_payload_hash(body: bytes) -> str:
-        payload = json.loads(body)
-        canonical_json = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
-        return hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
 
     async def save_event(
             self,

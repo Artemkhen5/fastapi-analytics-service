@@ -1,6 +1,6 @@
 import json
 
-from src.rabbit.service import RabbitService
+from src.rabbit.payload import calculate_payload_hash
 
 
 def test_payload_hash() -> None:
@@ -16,5 +16,5 @@ def test_payload_hash() -> None:
         "event_type": "game_event"
     }
 
-    assert RabbitService.calculate_payload_hash(json.dumps(payload).encode()) == RabbitService.calculate_payload_hash(
+    assert calculate_payload_hash(json.dumps(payload).encode()) == calculate_payload_hash(
         json.dumps(reordered_payload).encode())
